@@ -1,30 +1,40 @@
-import { FieldSet } from "airtable";
-import connectAirtable from "./connection";
+import connectAirtable from "./connect";
+import { Client, Clients } from "../types/client";
 
-const getClients = () => {
+const getClients = (
+  setClients: React.Dispatch<React.SetStateAction<Clients>>
+) => {
   const base = connectAirtable();
-  const table = base("Table 1");
-  const data: FieldSet[] = [];
+  const TABLE_NAME = "Table 1";
+  const table = base(TABLE_NAME);
+
+  const GRID_VIEW_NAME = "Grid view";
+
   table
     .select({
-      view: "Grid view",
+      view: GRID_VIEW_NAME,
     })
     .eachPage(
-      function page(records, fetchNextPage) {
+      (records, fetchNextPage) => {
         for (const record of records) {
-          data.push(record.fields);
+          setClients((previousClients) => {
+            return [
+              ...previousClients,
+              {
+                id: record.id,
+                ...record.fields,
+              } as Client,
+            ];
+          });
         }
         fetchNextPage();
       },
-      function done(err) {
-        if (err) {
-          console.error(err);
-          return;
+      (error) => {
+        if (error) {
+          console.error(error);
         }
       }
     );
-
-  return data;
 };
 
 export default getClients;
